@@ -44,6 +44,7 @@ public class UserInterface {
             System.out.println("7. Get all vehicles");
             System.out.println("8. Add vehicle");
             System.out.println("9. Remove vehicle");
+            System.out.println("10. Sell/Lease a Vehicle.");
             System.out.println("0. Exit");
             System.out.print("Command: ");
 
@@ -67,6 +68,7 @@ public class UserInterface {
                 case 7 -> processGetAllVehiclesRequest();
                 case 8 -> processAddVehicleRequest();
                 case 9 -> processRemoveVehicleRequest();
+                case 10 -> processSellOrLeaseVehicle();
                 case 0 -> {
                     System.out.println("Exiting...");
                     return; // Exit the program
@@ -238,4 +240,61 @@ public class UserInterface {
         System.out.println("Press Enter to return to the menu...");
         scanner.nextLine();
     }
+
+    public void processSellOrLeaseVehicle() {
+        System.out.print("Enter VIN: ");
+        int vin = scanner.nextInt();
+        scanner.nextLine();
+
+        Vehicle vehicle = null;
+        for (Vehicle v : dealership.getAllVehicles()) {
+            if (v.getVin() == vin) {
+                vehicle = v;
+                break;
+            }
+        }
+
+        if (vehicle == null) {
+            System.out.println("Vehicle not found.");
+            return;
+        }
+
+        System.out.print("Enter Customer Name: ");
+        String customerName = scanner.nextLine();
+        System.out.print("Enter Customer Email: ");
+        String customerEmail = scanner.nextLine();
+
+        System.out.print("Is this a Sale or Lease (S/L)? ");
+        String type = scanner.nextLine().toUpperCase();
+
+        double totalPrice;
+        double monthlyPayment = 0.0;
+
+        if (type.equals("S")) {
+            totalPrice = vehicle.getPrice() * 1.05; // Including 5% tax
+            System.out.print("Finance? (yes/no): ");
+            boolean finance = scanner.nextLine().equalsIgnoreCase("yes");
+            if (finance) {
+                double rate = (vehicle.getPrice() >= 10000) ? 0.0425 : 0.0525;
+                int months = (vehicle.getPrice() >= 10000) ? 48 : 24;
+                monthlyPayment = (totalPrice * rate) / months;
+            }
+            System.out.println("Sale Contract Created.");
+        } else if (type.equals("L")) {
+            if (vehicle.getYear() < 2022) {
+                System.out.println("Cannot lease a vehicle older than 3 years.");
+                return;
+            }
+            totalPrice = vehicle.getPrice() * 1.07; // Including 7% lease fee
+            monthlyPayment = (totalPrice * 0.04) / 36; // Lease rate
+            System.out.println("Lease Contract Created.");
+        } else {
+            System.out.println("Invalid choice.");
+            return;
+        }
+
+        Contract contract = new Contract("2021-09-28", customerName, customerEmail, type, totalPrice, monthlyPayment);
+        ContractFileManager.saveContract(contract);
+    }
+
 }
